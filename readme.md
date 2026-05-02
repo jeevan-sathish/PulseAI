@@ -43,13 +43,13 @@ It includes authentication, prediction history tracking, and a modern React UI w
 
 ### 2️⃣ Login Page
 
-![Login Page](./frontend//src/assets/img3.png)
+![Login Page](./frontend//src/assets/IMG3.png)
 
 ---
 
 ### 3️⃣ Register page
 
-![Register Page](./frontend//src/assets/img4.png)
+![Register Page](./frontend//src/assets/IMG4.png)
 
 ---
 
