@@ -37,25 +37,25 @@ It includes authentication, prediction history tracking, and a modern React UI w
 
 ### 1️⃣ Home Page
 
-![Home Page](./screenshots/home.png)
+![Home Page](./frontend//src/assets/img2.png)
 
 ---
 
 ### 2️⃣ Login Page
 
-![Login Page](./screenshots/login.png)
+![Login Page](./frontend//src/assets/img3.png)
 
 ---
 
-### 3️⃣ Prediction Dashboard
+### 3️⃣ Register page
 
-![Prediction Page](./screenshots/prediction.png)
+![Register Page](./frontend//src/assets/img4.png)
 
 ---
 
-### 4️⃣ History Section
+### 4️⃣ Prediction and Section
 
-![History Page](./screenshots/history.png)
+![Prediction and history  Page](./frontend//src/assets/img1.png)
 
 ---
 
