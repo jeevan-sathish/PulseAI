@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 router = APIRouter()
 
-# Load ML models
 model = joblib.load("./models/model.pkl")
 scaler = joblib.load("./models/scaler.pkl")
 columns = joblib.load("./models/columns.pkl")
@@ -29,23 +28,25 @@ class InputData(BaseModel):
 
 @router.post("/predict")
 def predict(data: InputData, user_id: int):
+
+    # ML processing
     df = pd.DataFrame([data.dict()])
     df = pd.get_dummies(df)
     df = df.reindex(columns=columns, fill_value=0)
-    df = df.astype(int)
     df = scaler.transform(df)
 
     prediction = model.predict(df)[0]
     probability = model.predict_proba(df)[0][1]
 
+    # 🔥 SAVE TO DATABASE HERE
     db = SessionLocal()
 
-    record = Prediction(
+    new_pred = Prediction(
         prediction=int(prediction),
         user_id=user_id
     )
 
-    db.add(record)
+    db.add(new_pred)
     db.commit()
     db.close()
 

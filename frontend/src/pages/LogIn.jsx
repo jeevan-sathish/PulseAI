@@ -1,91 +1,111 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import useUserStore from "../store/userStore";
 
-const LogIn = () => {
+const Login = () => {
   const navigate = useNavigate();
-
-  // Zustand store
   const setUser = useUserStore((state) => state.setUser);
 
-  // local form state
-  const [formData, setFormData] = useState({
+  const [form, setForm] = useState({
     email: "",
     password: "",
   });
 
+  const [loading, setLoading] = useState(false);
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleLogin = async (e) => {
     e.preventDefault();
 
+    if (!form.email || !form.password) {
+      alert("Please fill all fields");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      const response = await fetch("http://127.0.0.1:8000/login", {
+      const res = await fetch("http://127.0.0.1:8000/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
       });
 
-      const data = await response.json();
-      console.log("Login response:", data);
+      const data = await res.json();
 
-      if (data.message === "Login successful") {
-        // ✅ store user in zustand
-        setUser({
-          user_id: data.user_id,
-          name: data.name,
-          email: formData.email,
-        });
-
-        alert("Login successful");
-
+      if (data.user_id) {
+        setUser(data);
         navigate("/prediction");
       } else {
-        alert(data.error || "Invalid credentials");
+        alert("Invalid email or password");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      alert("Server not reachable");
+      alert("Server error");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="w-full min-h-screen flex flex-col items-center justify-center">
-      <h2>Login</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 via-blue-900 to-indigo-900 px-4">
+      <form
+        onSubmit={handleLogin}
+        className="bg-white/10 backdrop-blur-lg border border-white/20 p-8 rounded-2xl w-full max-w-md text-white shadow-2xl"
+      >
+        <h2 className="text-3xl font-bold text-center mb-6">Welcome Back ⚡</h2>
 
-      <form onSubmit={handleLogin} className="flex flex-col gap-3">
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-        />
+        <p className="text-center text-gray-300 mb-6 text-sm">
+          Login to access PulseAI dashboard
+        </p>
 
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-        />
+        {/* EMAIL */}
+        <div className="mb-4">
+          <label className="text-sm text-gray-300">Email</label>
+          <input
+            name="email"
+            placeholder="Enter your email"
+            onChange={handleChange}
+            className="w-full mt-1 p-3 rounded-lg bg-black/30 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
 
-        <button type="submit">Login</button>
+        {/* PASSWORD */}
+        <div className="mb-6">
+          <label className="text-sm text-gray-300">Password</label>
+          <input
+            type="password"
+            name="password"
+            placeholder="Enter password"
+            onChange={handleChange}
+            className="w-full mt-1 p-3 rounded-lg bg-black/30 outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+
+        {/* BUTTON */}
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-500 hover:bg-blue-600 transition py-3 rounded-xl font-semibold disabled:opacity-50"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+
+        {/* REGISTER LINK */}
+        <p className="text-center text-sm text-gray-300 mt-5">
+          New user?{" "}
+          <Link
+            to="/register"
+            className="text-blue-400 hover:underline font-medium"
+          >
+            Create account
+          </Link>
+        </p>
       </form>
-
-      <p>
-        Don't have an account? <Link to="/register">Register</Link>
-      </p>
     </div>
   );
 };
 
-export default LogIn;
+export default Login;

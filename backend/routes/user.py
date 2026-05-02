@@ -30,4 +30,10 @@ def get_history(user_id: int):
 
     db.close()
 
-    return records
+    return [
+        {
+            "id": r.id,
+            "prediction": r.prediction
+        }
+        for r in records
+    ]

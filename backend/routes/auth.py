@@ -47,16 +47,3 @@ def login(data: LoginData):
         "name": user.name
     }
 
-@router.get("/history/{user_id}")
-def get_history(user_id: int):
-    db = SessionLocal()
-
-    history = db.query(Prediction).filter(Prediction.user_id == user_id).all()
-
-    return [
-        {
-            "id": h.id,
-            "prediction": h.prediction
-        }
-        for h in history
-    ]
