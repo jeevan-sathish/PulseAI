@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
 from database import SessionLocal
-from db_models import User
+from db_models import Prediction, User
 
 router = APIRouter()
 
@@ -46,3 +46,17 @@ def login(data: LoginData):
         "user_id": user.id,
         "name": user.name
     }
+
+@router.get("/history/{user_id}")
+def get_history(user_id: int):
+    db = SessionLocal()
+
+    history = db.query(Prediction).filter(Prediction.user_id == user_id).all()
+
+    return [
+        {
+            "id": h.id,
+            "prediction": h.prediction
+        }
+        for h in history
+    ]
