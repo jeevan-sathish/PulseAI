@@ -59,6 +59,12 @@ It includes authentication, prediction history tracking, and a modern React UI w
 
 ---
 
+### 4️⃣ AI suggestion section
+
+![AI suggestion section](./frontend//src/assets/img5.png)
+
+---
+
 ## ⚙️ Installation & Setup
 
 ### 1. Clone the repository
