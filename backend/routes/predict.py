@@ -3,9 +3,14 @@ import pandas as pd
 import joblib
 from database import SessionLocal
 from db_models import Prediction
+import os
+from dotenv import load_dotenv
 from pydantic import BaseModel
+from groq import Groq
 
+load_dotenv
 router = APIRouter()
+
 
 model = joblib.load("./models/model.pkl")
 scaler = joblib.load("./models/scaler.pkl")
@@ -28,6 +33,16 @@ class InputData(BaseModel):
 
 @router.post("/predict")
 def predict(data: InputData, user_id: int):
+    client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+
+    response = client.chat.completions.create(
+        model="llama-3.3-70b-versatile",
+        messages=[
+            {"role": "user", "content": f"Based on the following patient data, provide health suggestions: {data.dict()}"}
+        ]
+    )
+    result = response.choices[0].message.content
+   
 
     # ML processing
     df = pd.DataFrame([data.dict()])
@@ -52,5 +67,6 @@ def predict(data: InputData, user_id: int):
 
     return {
         "prediction": int(prediction),
-        "probability": float(probability)
+        "probability": float(probability),
+        "suggestions": result
     }
