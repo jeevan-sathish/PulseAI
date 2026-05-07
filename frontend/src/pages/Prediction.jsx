@@ -1,9 +1,24 @@
 import { useState, useEffect } from "react";
 import useUserStore from "../store/userStore";
+import { ClipLoader } from "react-spinners";
+
+import {
+  LineChart,
+  Line,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+} from "recharts";
+import { useNavigate } from "react-router-dom";
 
 const Prediction = () => {
   const user = useUserStore((state) => state.user);
   const user_id = user?.user_id;
+  const Navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     Age: "",
@@ -22,15 +37,21 @@ const Prediction = () => {
   const [result, setResult] = useState(null);
   const [history, setHistory] = useState([]);
   const [chatResponse, setChatResponse] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ================= PREDICT =================
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!user_id) {
+      alert("Login required");
+      Navigate("/login");
+    }
 
-    if (!user_id) return alert("User not logged in");
+    setLoading(true);
 
     const res = await fetch(
       `http://127.0.0.1:8000/predict?user_id=${user_id}`,
@@ -53,209 +74,261 @@ const Prediction = () => {
     setResult(data);
     setChatResponse(data.suggestions);
     fetchHistory();
+    setLoading(false);
   };
 
+  // ================= HISTORY =================
   const fetchHistory = async () => {
     if (!user_id) return;
 
     const res = await fetch(`http://127.0.0.1:8000/history/${user_id}`);
     const data = await res.json();
-    setHistory(data);
+
+    setHistory(Array.isArray(data) ? data : data.history || []);
   };
 
   useEffect(() => {
-    fetchHistory();
+    if (user_id) fetchHistory();
   }, [user_id]);
 
+  const chartData = history.map((h, i) => ({
+    name: `T${i + 1}`,
+    risk: h.prediction,
+  }));
+
+  const pieData = [
+    {
+      name: "High Risk",
+      value: history.filter((h) => h.prediction === 1).length,
+    },
+    {
+      name: "Low Risk",
+      value: history.filter((h) => h.prediction === 0).length,
+    },
+  ];
+
+  const COLORS = ["#ef4444", "#22c55e"];
+
+  const total = history.length || 1;
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-blue-950 to-gray-900 text-white p-4 sm:p-6">
-      {/* MAIN LAYOUT */}
-      <div className="flex flex-col lg:flex-row gap-6 max-w-7xl mx-auto">
-        {/* LEFT - FORM */}
-        <div className="w-full lg:w-1/2 bg-white/10 backdrop-blur-lg p-5 sm:p-6 rounded-2xl shadow-xl border border-white/10">
-          <h2 className="text-xl sm:text-2xl font-bold mb-6 text-blue-300">
-            🫀 Heart Disease Prediction
-          </h2>
+    <div className="min-h-screen bg-gray-950 text-white p-4">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-1 flex flex-col gap-4">
+          <div className="sticky top-4 bg-gray-900 border border-gray-800 p-4 rounded-xl">
+            <h2 className="text-blue-400 font-bold mb-3">🫀 Prediction Form</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <input
-              name="Age"
-              placeholder="Age"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            />
+            <form onSubmit={handleSubmit} className="space-y-2">
+              <input
+                name="Age"
+                placeholder="Age"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border border-gray-700"
+              />
 
-            <select
-              name="Sex"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            >
-              <option value="">Select Gender</option>
-              <option value="M">Male</option>
-              <option value="F">Female</option>
-            </select>
+              <select
+                name="Sex"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border border-gray-700"
+              >
+                <option value="">Sex</option>
+                <option value="M">Male</option>
+                <option value="F">Female</option>
+              </select>
 
-            <select
-              name="ChestPainType"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            >
-              <option value="">Chest Pain Type</option>
-              <option value="ATA">ATA</option>
-              <option value="NAP">NAP</option>
-              <option value="ASY">ASY</option>
-              <option value="TA">TA</option>
-            </select>
+              <select
+                name="ChestPainType"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border border-gray-700"
+              >
+                <option value="">Chest Pain</option>
+                <option value="ATA">ATA</option>
+                <option value="NAP">NAP</option>
+                <option value="ASY">ASY</option>
+                <option value="TA">TA</option>
+              </select>
 
-            <input
-              name="RestingBP"
-              placeholder="Resting BP"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            />
+              <input
+                name="RestingBP"
+                placeholder="BP"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border"
+              />
 
-            <input
-              name="Cholesterol"
-              placeholder="Cholesterol"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            />
+              <input
+                name="Cholesterol"
+                placeholder="Cholesterol"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border"
+              />
 
-            <input
-              name="MaxHR"
-              placeholder="Max Heart Rate"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            />
+              <input
+                name="MaxHR"
+                placeholder="Max HR"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border"
+              />
 
-            <input
-              name="Oldpeak"
-              placeholder="Oldpeak"
-              onChange={handleChange}
-              className="w-full p-3 rounded bg-black/30 border border-gray-600"
-            />
+              <input
+                name="Oldpeak"
+                placeholder="Oldpeak"
+                onChange={handleChange}
+                className="w-full p-2 bg-black/40 rounded border"
+              />
 
-            <button
-              type="submit"
-              className="w-full bg-blue-500 hover:bg-blue-600 transition p-3 rounded font-semibold"
-            >
-              Predict
-            </button>
-          </form>
+              <button
+                disabled={loading}
+                className="w-full bg-blue-500 p-2 rounded mt-2"
+              >
+                {loading ? <ClipLoader size={16} /> : "Predict"}
+              </button>
+            </form>
 
-          {/* RESULT */}
-          {result && (
-            <div className="mt-6 p-4 rounded-xl bg-black/40 border border-blue-500">
-              <h3 className="text-lg font-semibold">
-                Result:
+            {/* RESULT */}
+            {result && (
+              <div className="mt-3 p-2 bg-black/40 rounded text-sm">
+                Result:{" "}
                 <span
-                  className={`ml-2 px-3 py-1 rounded-full text-white ${
-                    result.prediction === 1 ? "bg-red-500" : "bg-green-500"
-                  }`}
+                  className={
+                    result.prediction ? "text-red-400" : "text-green-400"
+                  }
                 >
-                  {result.prediction === 1 ? "High Risk ❗" : "No Risk ✅"}
+                  {result.prediction ? "High Risk" : "Low Risk"}
                 </span>
-              </h3>
-
-              <p className="mt-2 text-gray-300">
-                Probability:
-                <span className="text-blue-300 font-semibold ml-2">
-                  {result.probability.toFixed(2)}
-                </span>
-              </p>
-            </div>
-          )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* RIGHT - HISTORY + AI */}
-        <div className="w-full lg:w-1/2 flex flex-col gap-4">
-          {/* HISTORY */}
-          <div className="bg-white/10 backdrop-blur-lg p-4 sm:p-6 rounded-2xl shadow-xl border border-white/10">
-            <h2 className="text-xl sm:text-2xl font-bold mb-4 text-blue-300">
-              📊 Prediction History
-            </h2>
+        {/* ================= RIGHT DASHBOARD ================= */}
+        <div className="lg:col-span-2 flex flex-col gap-3">
+          {/* USER */}
+          <div className="bg-gray-900 p-3 rounded-xl border border-gray-800">
+            👋 Welcome{" "}
+            <span className="text-blue-400 font-bold">
+              {user?.name || "User"}
+            </span>
+          </div>
 
-            <div className="max-h-[300px] overflow-y-auto pr-2 space-y-3">
-              {history.length === 0 ? (
-                <p className="text-gray-400">No history available</p>
-              ) : (
-                history.map((item, index) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center justify-between p-3 rounded-lg bg-black/30 border border-gray-700"
-                  >
-                    <div className="font-bold text-blue-300">{index + 1}</div>
+          {/* STATS */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-gray-900 p-3 rounded">
+              Total: {history.length}
+            </div>
+            <div className="bg-gray-900 p-3 rounded text-red-400">
+              High: {pieData[0].value}
+            </div>
+            <div className="bg-gray-900 p-3 rounded text-green-400">
+              Low: {pieData[1].value}
+            </div>
+          </div>
 
-                    <div className="flex-1 ml-3">
-                      <p className="text-sm text-gray-300">Result</p>
-                      <p
-                        className={`font-semibold ${
-                          item.prediction === 1
-                            ? "text-red-400"
-                            : "text-green-400"
-                        }`}
+          {/* CHARTS */}
+          <div className="grid grid-cols-2 gap-3">
+            {/* LINE */}
+            <div className="bg-gray-900 p-3 rounded h-56">
+              <h3 className="text-blue-400 text-sm mb-1">Trend</h3>
+              <ResponsiveContainer width="100%" height="90%">
+                <LineChart data={chartData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <RTooltip />
+                  <Line dataKey="risk" stroke="#3b82f6" />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* PIE (IMPROVED) */}
+            <div className="bg-gray-900 p-3 rounded h-56 flex flex-col">
+              <h3 className="text-blue-400 text-sm mb-2">Risk Distribution</h3>
+
+              <div className="flex flex-1">
+                {/* CHART */}
+                <div className="w-2/3 h-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={pieData}
+                        dataKey="value"
+                        outerRadius={60}
+                        innerRadius={35}
+                        paddingAngle={4}
+                        label={({ percent }) =>
+                          `${(percent * 100).toFixed(0)}%`
+                        }
                       >
-                        {item.prediction === 1
-                          ? "High Risk Patient"
-                          : "No Risk Detected"}
-                      </p>
-                    </div>
+                        {pieData.map((_, i) => (
+                          <Cell key={i} fill={COLORS[i]} />
+                        ))}
+                      </Pie>
 
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        item.prediction === 1 ? "bg-red-500" : "bg-green-500"
-                      }`}
-                    >
-                      {item.prediction}
-                    </span>
+                      <RTooltip />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+
+                {/* LEGEND */}
+                <div className="w-1/3 text-xs space-y-2">
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-red-500 rounded-full"></span>
+                    High
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <span className="w-3 h-3 bg-green-500 rounded-full"></span>
+                    Low
+                  </div>
+
+                  <div className="mt-3 text-[10px] text-gray-400">
+                    Risk distribution based on all predictions.
+                  </div>
+
+                  <div className="mt-2 p-2 bg-black/40 rounded text-center">
+                    <p className="text-[10px] text-gray-400">High Risk %</p>
+                    <p className="text-sm font-bold">
+                      {Math.round((pieData[0].value / total) * 100)}%
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI */}
+          <div className="bg-gray-900 p-3 rounded-xl border border-gray-800">
+            <h3 className="text-blue-400 mb-2">🤖 AI Insight</h3>
+
+            <div className="max-h-60 overflow-y-auto space-y-2 text-sm">
+              {chatResponse ? (
+                chatResponse.split("\n").map((line, i) => (
+                  <div key={i} className="bg-black/40 p-2 rounded">
+                    {line}
                   </div>
                 ))
+              ) : (
+                <p className="text-gray-400">Run prediction to see analysis</p>
               )}
             </div>
           </div>
 
-          {/* AI SUGGESTION */}
-          <div className="bg-white/10 max-h-[350px] rounded-2xl overflow-y-auto backdrop-blur-lg p-4 sm:p-6 rounded-2xl shadow-xl border border-white/10 flex-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-blue-300 mb-3">
-              AI Health Analysis
-            </h2>
+          {/* HISTORY */}
+          <div className="bg-gray-900 p-3 rounded-xl max-h-40 overflow-y-auto">
+            <h3 className="text-blue-400 mb-2">📜 History</h3>
 
-            <div className="text-gray-300 text-sm sm:text-base leading-relaxed whitespace-pre-wrap">
-              {chatResponse ? (
-                <div className="space-y-3">
-                  {chatResponse
-                    .split("\n")
-                    .filter((line) => line.trim() !== "")
-                    .map((line, index) => {
-                      // highlight important words
-                      const formattedLine = line
-                        .replace(
-                          /\b(high risk|low risk|critical|warning|normal)\b/gi,
-                          (match) =>
-                            `<span class="text-blue-300 font-semibold">${match}</span>`,
-                        )
-                        .replace(
-                          /\b(heart disease|cholesterol|blood pressure|risk)\b/gi,
-                          (match) =>
-                            `<span class="text-white font-semibold">${match}</span>`,
-                        );
-
-                      return (
-                        <p
-                          key={index}
-                          className="leading-6"
-                          dangerouslySetInnerHTML={{ __html: formattedLine }}
-                        />
-                      );
-                    })}
+            {history.length === 0 ? (
+              <p className="text-gray-500">No records</p>
+            ) : (
+              history.map((h, i) => (
+                <div key={i} className="flex justify-between text-sm p-1">
+                  <span>Test {i + 1}</span>
+                  <span
+                    className={h.prediction ? "text-red-400" : "text-green-400"}
+                  >
+                    {h.prediction ? "High" : "Low"}
+                  </span>
                 </div>
-              ) : (
-                <p className="text-gray-400">
-                  Submit the form to get personalized health suggestions from
-                  our AI assistant.
-                </p>
-              )}
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>
